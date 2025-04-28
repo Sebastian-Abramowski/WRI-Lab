@@ -3,20 +3,20 @@
 from time import sleep
 from enum import Enum
 
-from ev3dev2.motor import LargeMotor, OUTPUT_A, OUTPUT_B, SpeedPercent
+from ev3dev2.motor import LargeMotor, OUTPUT_A, OUTPUT_B, OUTPUT_C, SpeedPercent
 
 from ev3dev2.sensor import INPUT_2,INPUT_3
 from ev3dev2.sensor.lego import ColorSensor
 from ev3dev2.sound import Sound
 
 
-NORMAL_FORWARD_SPEED = 9
-LEADING_WHEEL_TURNING_SPEED = 6
-SUPPORTING_WHEEL_TURNING_SPEED = -9
-
+NORMAL_FORWARD_SPEED = 10
+LEADING_WHEEL_TURNING_SPEED = 10
+SUPPORTING_WHEEL_TURNING_SPEED = -13
 
 RIGHT_MOTOR = LargeMotor(OUTPUT_A)
 LEFT_MOTOR = LargeMotor(OUTPUT_B)
+GRABBER_MOTOR = LargeMotor(OUTPUT_C)
 
 LEFT_COLOR_SENSOR = ColorSensor(INPUT_3)
 RIGHT_COLOR_SENSOR = ColorSensor(INPUT_2)
