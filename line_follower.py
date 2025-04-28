@@ -10,9 +10,9 @@ from ev3dev2.sensor.lego import ColorSensor
 from ev3dev2.sound import Sound
 
 
-NORMAL_FORWARD_SPEED = 15
-LEADING_WHEEL_TURNING_SPEED = 10
-SUPPORTING_WHEEL_TURNING_SPEED = -10
+NORMAL_FORWARD_SPEED = 9
+LEADING_WHEEL_TURNING_SPEED = 6
+SUPPORTING_WHEEL_TURNING_SPEED = -9
 
 
 RIGHT_MOTOR = LargeMotor(OUTPUT_A)
@@ -81,10 +81,10 @@ def follow_line():
 			sleep(0.005)
 			left_color = get_color_from(LEFT_COLOR_SENSOR)
 			right_color = get_color_from(RIGHT_COLOR_SENSOR)
-			debug_colors()
+			# debug_colors()
 
 			if left_color == Color.BLACK and right_color == Color.BLACK:
-				print("Both sensors are on black, we are on the intersection!")
+				# print("Both sensors are on black, we are on the intersection!")
 				go_forward()
 			elif left_color == Color.BLACK and right_color == Color.WHITE:
 				turn_left()
@@ -95,8 +95,6 @@ def follow_line():
 		except KeyboardInterrupt:
 			brake()
 			exit()
-		except Exception:
-			continue
 
 if __name__ == "__main__":
 	follow_line()
