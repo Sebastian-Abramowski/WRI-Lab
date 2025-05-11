@@ -3,15 +3,15 @@
 from time import sleep
 from enum import Enum
 from ev3dev2.motor import LargeMotor, OUTPUT_A, OUTPUT_B, OUTPUT_C, SpeedPercent, MediumMotor
-from ev3dev2.sensor import INPUT_1, INPUT_4
-from ev3dev2.sensor.lego import ColorSensor
+from ev3dev2.sensor import INPUT_1, INPUT_4, INPUT_2
+from ev3dev2.sensor.lego import ColorSensor, TouchSensor
 from ev3dev2.sound import Sound
 
+DEBUG = True
 
-NORMAL_FORWARD_SPEED = 8
-LEADING_WHEEL_TURNING_SPEED = 8
-SUPPORTING_WHEEL_TURNING_SPEED = -11
-DEGREES_FOR_180 = 400
+NORMAL_FORWARD_SPEED = 4
+LEADING_WHEEL_TURNING_SPEED = 4
+SUPPORTING_WHEEL_TURNING_SPEED = -7
 
 RIGHT_MOTOR = LargeMotor(OUTPUT_A)
 LEFT_MOTOR = LargeMotor(OUTPUT_B)
@@ -19,6 +19,7 @@ GRABBER_MOTOR = MediumMotor(OUTPUT_C)
 
 LEFT_COLOR_SENSOR = ColorSensor(INPUT_4)
 RIGHT_COLOR_SENSOR = ColorSensor(INPUT_1)
+TOUCH_SENSOR = TouchSensor(INPUT_2)
 
 class Color(Enum):
     BLACK = "Black"
@@ -27,12 +28,14 @@ class Color(Enum):
     BLUE = "Blue"
     UNKNOWN = "Unknown"
 
+def debug_print(*args):
+    if DEBUG:
+        print(*args)
+
 
 def get_color_from(sensor):
     red, green, blue = sensor.rgb
-
-    print(red, green, blue)
-
+    debug_print("RGB values: ", red, green, blue)
 
     if (red > 105 and green < 50 and blue < 50) or sensor.color_name == "Red":
         return Color.RED
@@ -50,26 +53,27 @@ def get_color_from(sensor):
 
 
 class RobotState:
-    def __init__(self):
+    def __init__(self, sound):
         self.state = 0
+        self.sound = sound
 
     def update(self):
         left_color = get_color_from(LEFT_COLOR_SENSOR)
         right_color = get_color_from(RIGHT_COLOR_SENSOR)
 
-        print(left_color, right_color)
+        debug_print("Colors before updating state: ", left_color, right_color)
 
         if (self.state == 0):
             self._follow_line(left_color, right_color)
 
             if (right_color == Color.BLUE):
                 RIGHT_MOTOR.on(SpeedPercent(0))
-                LEFT_MOTOR.on(SpeedPercent(5))
+                LEFT_MOTOR.on(SpeedPercent(4))
 
                 self.state = 1
 
             elif (left_color == Color.BLUE):
-                RIGHT_MOTOR.on(SpeedPercent(5))
+                RIGHT_MOTOR.on(SpeedPercent(4))
                 LEFT_MOTOR.on(SpeedPercent(0))
 
                 self.state = 4
@@ -115,6 +119,11 @@ class RobotState:
                 LEFT_MOTOR.on(SpeedPercent(0))
 
                 self.grab_until_stall()
+
+                sleep(0.5)
+                self.sound.beep()
+                sleep(0.5)
+
                 self.state = 8
 
         # after grabbing
@@ -126,10 +135,10 @@ class RobotState:
                 self.state = 9
 
         elif (self.state == 9):
-            if (right_color == Color.RED):
+            if (right_color == Color.BLUE):
                 right_color = Color.BLACK
 
-            if (left_color == Color.RED):
+            if (left_color == Color.BLUE):
                 left_color = Color.BLACK
 
             self._follow_line(left_color, right_color)
@@ -143,7 +152,7 @@ class RobotState:
         # stopped on black black, turning right
         elif (self.state == 10):
             RIGHT_MOTOR.on(SpeedPercent(0))
-            LEFT_MOTOR.on(SpeedPercent(5))
+            LEFT_MOTOR.on(SpeedPercent(4))
 
             if (left_color == Color.WHITE):
                 self.state = 11
@@ -163,12 +172,12 @@ class RobotState:
 
             if (right_color == Color.RED):
                 RIGHT_MOTOR.on(SpeedPercent(0))
-                LEFT_MOTOR.on(SpeedPercent(5))
+                LEFT_MOTOR.on(SpeedPercent(4))
 
                 self.state = 13
 
             elif (left_color == Color.RED):
-                RIGHT_MOTOR.on(SpeedPercent(5))
+                RIGHT_MOTOR.on(SpeedPercent(4))
                 LEFT_MOTOR.on(SpeedPercent(0))
 
                 self.state = 16
@@ -218,11 +227,9 @@ class RobotState:
                 self.state = 20
 
         elif (self.state == 20):
-            sound = Sound()
-
-            sound.beep()
+            self.sound.beep()
             sleep(0.1)
-            sound.beep()
+            self.sound.beep()
             self.state = 21
 
         # champions
@@ -231,9 +238,7 @@ class RobotState:
 
         else:
             self.brake()
-            sound = Sound()
-
-            sound.beep()
+            self.sound.beep()
 
     def _follow_line(self, left_color, right_color):
         if left_color == Color.BLACK and right_color == Color.BLACK:
@@ -275,16 +280,9 @@ class RobotState:
                 break
             sleep(0.1)
 
-
-    def turn_around(self):
-        RIGHT_MOTOR.on_for_degrees(SpeedPercent(20), DEGREES_FOR_180)
-        LEFT_MOTOR.on_for_degrees(SpeedPercent(-20), DEGREES_FOR_180)
-        self.brake()
-
     def brake(self):
         RIGHT_MOTOR.off(brake=False)
         LEFT_MOTOR.off(brake=False)
-
 
 
 def perform_transporting():
@@ -293,14 +291,20 @@ def perform_transporting():
         sound.beep()
         sleep(0.3)
 
-
-    robot = RobotState()
+    robot = RobotState(sound)
 
     while True:
         try:
             sleep(0.005)
 
-            print(robot.state)
+            if TOUCH_SENSOR.is_pressed:
+                robot.brake()
+                sound.beep()
+                sleep(0.5)
+                sound.beep()
+                robot.state = 0
+
+            debug_print("Currently in state: ", robot.state)
             robot.update()
         except KeyboardInterrupt:
             robot.brake()
