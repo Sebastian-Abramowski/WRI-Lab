@@ -3,7 +3,7 @@
 from time import sleep
 from enum import Enum
 from ev3dev2.motor import LargeMotor, OUTPUT_A, OUTPUT_B, OUTPUT_C, SpeedPercent, MediumMotor
-from ev3dev2.sensor import INPUT_2, INPUT_3
+from ev3dev2.sensor import INPUT_1, INPUT_4
 from ev3dev2.sensor.lego import ColorSensor
 from ev3dev2.sound import Sound
 
@@ -17,8 +17,8 @@ RIGHT_MOTOR = LargeMotor(OUTPUT_A)
 LEFT_MOTOR = LargeMotor(OUTPUT_B)
 GRABBER_MOTOR = MediumMotor(OUTPUT_C)
 
-LEFT_COLOR_SENSOR = ColorSensor(INPUT_3)
-RIGHT_COLOR_SENSOR = ColorSensor(INPUT_2)
+LEFT_COLOR_SENSOR = ColorSensor(INPUT_4)
+RIGHT_COLOR_SENSOR = ColorSensor(INPUT_1)
 
 class Color(Enum):
     BLACK = "Black"
@@ -30,6 +30,9 @@ class Color(Enum):
 
 def get_color_from(sensor):
     red, green, blue = sensor.rgb
+
+    print(red, green, blue)
+
 
     if (red > 105 and green < 50 and blue < 50) or sensor.color_name == "Red":
         return Color.RED
@@ -53,6 +56,8 @@ class RobotState:
     def update(self):
         left_color = get_color_from(LEFT_COLOR_SENSOR)
         right_color = get_color_from(RIGHT_COLOR_SENSOR)
+
+        print(left_color, right_color)
 
         if (self.state == 0):
             self._follow_line(left_color, right_color)
@@ -103,7 +108,7 @@ class RobotState:
 
         # after turning
         elif (self.state == 7):
-            self._follow_line()
+            self._follow_line(left_color, right_color)
 
             if (left_color == Color.BLUE or right_color == Color.BLUE):
                 RIGHT_MOTOR.on(SpeedPercent(0))
@@ -202,7 +207,7 @@ class RobotState:
 
         # after turning
         elif (self.state == 19):
-            self._follow_line()
+            self._follow_line(left_color, right_color)
 
             if (left_color == Color.RED or right_color == Color.RED):
                 RIGHT_MOTOR.on(SpeedPercent(0))
@@ -230,31 +235,6 @@ class RobotState:
 
             sound.beep()
 
-
-        self.handle_colors(left_color, right_color)
-
-    def handle_colors(self, left_color, right_color):
-        print(f"Left: {left_color}, Right: {right_color}, Carrying: {self.carrying}")
-
-        if (left_color == Color.BLUE or right_color == Color.BLUE) and not self.carrying and not self.has_turned:
-
-            self.grab_until_stall()
-            self.turn_around()
-            self.carrying = True
-            self.has_turned = True
-            return
-
-        if (left_color == Color.RED or right_color == Color.RED) and self.carrying and not self.has_turned:
-            self.release_until_stall()
-            self.carrying = False
-            self.has_turned = True
-            return
-
-        if left_color in [Color.WHITE, Color.BLACK] and right_color in [Color.WHITE, Color.BLACK]:
-            self.has_turned = False
-
-        self._follow_line(left_color, right_color)
-
     def _follow_line(self, left_color, right_color):
         if left_color == Color.BLACK and right_color == Color.BLACK:
             self._go_forward()
@@ -278,40 +258,32 @@ class RobotState:
         LEFT_MOTOR.on(SpeedPercent(LEADING_WHEEL_TURNING_SPEED))
 
     def grab_until_stall(self):
-        print("Zamykanie chwytaka aż do oporu...")
-        GRABBER_MOTOR.on(SpeedPercent(-30))
-
-        while True:
-            if GRABBER_MOTOR.is_stalled:
-                print("Wykryto opór - zatrzymuję silnik.")
-                GRABBER_MOTOR.off(brake=True)
-                break
-            sleep(0.1)
-
-        print(f"Pozycja końcowa: {GRABBER_MOTOR.position}°")
-
-    def release_until_stall(self):
-        print("Otwieranie chwytaka aż do oporu...")
         GRABBER_MOTOR.on(SpeedPercent(30))
 
         while True:
             if GRABBER_MOTOR.is_stalled:
-                print("Wykryto opór – zatrzymuję silnik.")
                 GRABBER_MOTOR.off(brake=True)
                 break
             sleep(0.1)
 
-        print(f"Pozycja końcowa: {GRABBER_MOTOR.position}°")
+    def release_until_stall(self):
+        GRABBER_MOTOR.on(SpeedPercent(-30))
+
+        while True:
+            if GRABBER_MOTOR.is_stalled:
+                GRABBER_MOTOR.off(brake=False)
+                break
+            sleep(0.1)
+
 
     def turn_around(self):
-        print("TURNING 180°")
         RIGHT_MOTOR.on_for_degrees(SpeedPercent(20), DEGREES_FOR_180)
         LEFT_MOTOR.on_for_degrees(SpeedPercent(-20), DEGREES_FOR_180)
         self.brake()
 
     def brake(self):
-        RIGHT_MOTOR.off(brake=True)
-        LEFT_MOTOR.off(brake=True)
+        RIGHT_MOTOR.off(brake=False)
+        LEFT_MOTOR.off(brake=False)
 
 
 
@@ -322,11 +294,13 @@ def perform_transporting():
         sleep(0.3)
 
 
-    robot = RobotState(sound)
+    robot = RobotState()
 
     while True:
         try:
             sleep(0.005)
+
+            print(robot.state)
             robot.update()
         except KeyboardInterrupt:
             robot.brake()
