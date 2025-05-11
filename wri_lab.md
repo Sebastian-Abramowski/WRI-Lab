@@ -19,3 +19,5 @@ Wątpliwośći:
 - czy powiniśmy otwierać na maxa grabber przed startem?
 - czy wjazd na baze może być bez koloru czarnego? na zdjęciu niby jest możliwa tylko niebieskia, wtedy trzeba będzie dodać stany
 - czy mamy rozpoznawać też kolor zielony i go ignorować? chyba ta, bo na zdjęciu pokazowym mamy takie opcje
+
+Transfer przed labami 12. maja aby sobie pobrać: https://www.transfernow.net/dl/20250511WSPcYp9I/ni6iOIfc
