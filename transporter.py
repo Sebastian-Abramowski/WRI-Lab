@@ -37,16 +37,16 @@ def get_color_from(sensor):
     red, green, blue = sensor.rgb
     debug_print("RGB values: ", red, green, blue)
 
-    if (red > 105 and green < 50 and blue < 50) or sensor.color_name == "Red":
+    if (red > 135 and green < 55 and blue < 45):
         return Color.RED
 
-    if (red < 40 and green < 125 and blue > 125) or sensor.color_name == "Blue":
+    if (red < 60 and green < 100 and blue > 100):
         return Color.BLUE
 
-    if (red < 100 and green < 100 and blue < 100) or sensor.color_name in  ["Black", "Brown"]:
+    if (red < 100 and green < 100 and blue < 100):
         return Color.BLACK
 
-    if (red > 100 and green > 150 and blue > 100) or sensor.color_name in ["White", "Yellow"]:
+    if (red > 100 and green > 100 and blue > 100) or sensor.color_name in ["White", "Yellow"]:
         return Color.WHITE
 
     return Color.UNKNOWN
