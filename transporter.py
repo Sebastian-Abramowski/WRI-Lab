@@ -32,8 +32,7 @@ def debug_print(*args):
     if DEBUG:
         print(*args)
 
-
-def get_color_from(sensor):
+def get_color_from_V1(sensor):
     red, green, blue = sensor.rgb
     debug_print("RGB values: ", red, green, blue)
 
@@ -51,6 +50,33 @@ def get_color_from(sensor):
 
     return Color.UNKNOWN
 
+COLOR_BASES = {
+    Color.RED:   (160, 40, 30),
+    Color.BLUE:  (30, 60, 140),
+    Color.BLACK: (20, 20, 20),
+    Color.WHITE: (220, 220, 220),
+}
+
+def get_color_from_V2(sensor):
+    red, green, blue = sensor.rgb
+    debug_print("RGB values: ", red, green, blue)
+
+    def avg_diff(color1, color2):
+        return (abs(color1[0] - color2[0]) + abs(color1[1] - color2[1]) + abs(color1[2] - color2[2])) / 3
+
+    best_color = Color.UNKNOWN
+    best_score = float('inf')
+
+    for color, base in COLOR_BASES.items():
+        score = avg_diff(sensor.rgb, base)
+        if score < best_score:
+            best_score = score
+            best_color = color
+
+    return best_color
+
+
+get_color_from = get_color_from_V2
 
 class RobotState:
     def __init__(self, sound):
@@ -118,11 +144,11 @@ class RobotState:
                 RIGHT_MOTOR.on(SpeedPercent(0))
                 LEFT_MOTOR.on(SpeedPercent(0))
 
-                self.grab_until_stall()
-
-                sleep(0.5)
+                sleep(1)
                 self.sound.beep()
-                sleep(0.5)
+                sleep(1)
+
+                self.grab_until_stall()
 
                 self.state = 8
 
