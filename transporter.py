@@ -3,15 +3,15 @@
 from time import sleep
 from enum import Enum
 from ev3dev2.motor import LargeMotor, OUTPUT_A, OUTPUT_B, OUTPUT_C, SpeedPercent, MediumMotor
-from ev3dev2.sensor import INPUT_1, INPUT_4, INPUT_2
-from ev3dev2.sensor.lego import ColorSensor, TouchSensor
+from ev3dev2.sensor import INPUT_1, INPUT_4
+from ev3dev2.sensor.lego import ColorSensor
 from ev3dev2.sound import Sound
 
-DEBUG = True
+DEBUG = False
 
-NORMAL_FORWARD_SPEED = 4
-LEADING_WHEEL_TURNING_SPEED = 4
-SUPPORTING_WHEEL_TURNING_SPEED = -7
+NORMAL_FORWARD_SPEED = 7
+LEADING_WHEEL_TURNING_SPEED = 7
+SUPPORTING_WHEEL_TURNING_SPEED = -12
 
 RIGHT_MOTOR = LargeMotor(OUTPUT_A)
 LEFT_MOTOR = LargeMotor(OUTPUT_B)
@@ -19,13 +19,14 @@ GRABBER_MOTOR = MediumMotor(OUTPUT_C)
 
 LEFT_COLOR_SENSOR = ColorSensor(INPUT_4)
 RIGHT_COLOR_SENSOR = ColorSensor(INPUT_1)
-TOUCH_SENSOR = TouchSensor(INPUT_2)
 
 class Color(Enum):
     BLACK = "Black"
     WHITE = "White"
     RED = "Red"
     BLUE = "Blue"
+    YELLOW = "Yellow"
+    GREEN = "Green"
     UNKNOWN = "Unknown"
 
 def debug_print(*args):
@@ -51,10 +52,12 @@ def get_color_from_V1(sensor):
     return Color.UNKNOWN
 
 COLOR_BASES = {
-    Color.RED:   (160, 40, 30),
-    Color.BLUE:  (30, 60, 140),
-    Color.BLACK: (20, 20, 20),
-    Color.WHITE: (220, 220, 220),
+    Color.RED:   (125, 35, 15),
+    Color.BLUE:  (20, 80, 90),
+    Color.BLACK: (22, 38, 20),
+    Color.WHITE: (150, 225, 162),
+    Color.GREEN: (17, 100, 30),
+    Color.YELLOW: (170, 235, 33)
 }
 
 def get_color_from_V2(sensor):
@@ -62,7 +65,7 @@ def get_color_from_V2(sensor):
     debug_print("RGB values: ", red, green, blue)
 
     def avg_diff(color1, color2):
-        return (abs(color1[0] - color2[0]) + abs(color1[1] - color2[1]) + abs(color1[2] - color2[2])) / 3
+        return (abs(color1[0] - color2[0]) + abs(color1[1] - color2[1]) + abs(color1[2] - color2[2]))
 
     best_color = Color.UNKNOWN
     best_score = float('inf')
@@ -72,6 +75,12 @@ def get_color_from_V2(sensor):
         if score < best_score:
             best_score = score
             best_color = color
+
+    if best_color in [Color.BLUE, Color.YELLOW]:
+        best_color = Color.WHITE
+
+    if best_color == Color.GREEN and (green < 83 or red > 30):
+       best_color = Color.WHITE
 
     return best_color
 
@@ -92,14 +101,14 @@ class RobotState:
         if (self.state == 0):
             self._follow_line(left_color, right_color)
 
-            if (right_color == Color.BLUE):
+            if (right_color == Color.GREEN):
                 RIGHT_MOTOR.on(SpeedPercent(0))
-                LEFT_MOTOR.on(SpeedPercent(4))
+                LEFT_MOTOR.on(SpeedPercent(10))
 
                 self.state = 1
 
-            elif (left_color == Color.BLUE):
-                RIGHT_MOTOR.on(SpeedPercent(4))
+            elif (left_color == Color.GREEN):
+                RIGHT_MOTOR.on(SpeedPercent(10))
                 LEFT_MOTOR.on(SpeedPercent(0))
 
                 self.state = 4
@@ -118,6 +127,10 @@ class RobotState:
         elif (self.state == 3):
 
             if (left_color == Color.BLACK):
+                #RIGHT_MOTOR.on(SpeedPercent(0))
+                RIGHT_MOTOR.on_for_degrees(SpeedPercent(25), 85)
+                LEFT_MOTOR.on(SpeedPercent(0))
+
                 self.state = 7
 
         # turning left
@@ -134,13 +147,17 @@ class RobotState:
         elif (self.state == 6):
 
             if (right_color == Color.BLACK):
+                RIGHT_MOTOR.on(SpeedPercent(0))
+                LEFT_MOTOR.on_for_degrees(SpeedPercent(25), 85)
+                #LEFT_MOTOR.on(SpeedPercent(0))
+
                 self.state = 7
 
         # after turning
         elif (self.state == 7):
             self._follow_line(left_color, right_color)
 
-            if (left_color == Color.BLUE or right_color == Color.BLUE):
+            if (left_color == Color.GREEN and right_color == Color.GREEN):
                 RIGHT_MOTOR.on(SpeedPercent(0))
                 LEFT_MOTOR.on(SpeedPercent(0))
 
@@ -161,15 +178,15 @@ class RobotState:
                 self.state = 9
 
         elif (self.state == 9):
-            if (right_color == Color.BLUE):
+            if (right_color == Color.GREEN):
                 right_color = Color.BLACK
 
-            if (left_color == Color.BLUE):
+            if (left_color == Color.GREEN):
                 left_color = Color.BLACK
 
             self._follow_line(left_color, right_color)
 
-            if (left_color == Color.BLACK or right_color == Color.BLACK):
+            if (left_color == Color.BLACK and right_color == Color.BLACK):
                 RIGHT_MOTOR.on(SpeedPercent(0))
                 LEFT_MOTOR.on(SpeedPercent(0))
 
@@ -178,7 +195,7 @@ class RobotState:
         # stopped on black black, turning right
         elif (self.state == 10):
             RIGHT_MOTOR.on(SpeedPercent(0))
-            LEFT_MOTOR.on(SpeedPercent(4))
+            LEFT_MOTOR.on(SpeedPercent(10))
 
             if (left_color == Color.WHITE):
                 self.state = 11
@@ -186,7 +203,8 @@ class RobotState:
         elif (self.state == 11):
 
             if (left_color == Color.BLACK):
-                RIGHT_MOTOR.on(SpeedPercent(0))
+                RIGHT_MOTOR.on_for_degrees(SpeedPercent(25), 85)
+                # RIGHT_MOTOR.on(SpeedPercent(0))
                 LEFT_MOTOR.on(SpeedPercent(0))
 
                 self.state = 12
@@ -198,12 +216,12 @@ class RobotState:
 
             if (right_color == Color.RED):
                 RIGHT_MOTOR.on(SpeedPercent(0))
-                LEFT_MOTOR.on(SpeedPercent(4))
+                LEFT_MOTOR.on(SpeedPercent(10))
 
                 self.state = 13
 
             elif (left_color == Color.RED):
-                RIGHT_MOTOR.on(SpeedPercent(4))
+                RIGHT_MOTOR.on(SpeedPercent(15))
                 LEFT_MOTOR.on(SpeedPercent(0))
 
                 self.state = 16
@@ -222,6 +240,10 @@ class RobotState:
         elif (self.state == 15):
 
             if (left_color == Color.BLACK):
+                LEFT_MOTOR.on(SpeedPercent(0))
+                #RIGHT_MOTOR.on(SpeedPercent(0))
+                RIGHT_MOTOR.on_for_degrees(SpeedPercent(25), 85)
+
                 self.state = 19
 
         # turning left
@@ -238,6 +260,10 @@ class RobotState:
         elif (self.state == 18):
 
             if (right_color == Color.BLACK):
+                #LEFT_MOTOR.on(SpeedPercent(0))
+                LEFT_MOTOR.on(SpeedPercent(15), 85)
+                RIGHT_MOTOR.on(SpeedPercent(0))
+
                 self.state = 19
 
         # after turning
@@ -267,12 +293,12 @@ class RobotState:
             self.sound.beep()
 
     def _follow_line(self, left_color, right_color):
-        if left_color == Color.BLACK and right_color == Color.BLACK:
-            self._go_forward()
-        elif left_color == Color.BLACK and right_color == Color.WHITE:
+        if left_color == Color.BLACK and right_color == Color.WHITE:
             self._turn_left()
+            sleep(0.025)
         elif left_color == Color.WHITE and right_color == Color.BLACK:
             self._turn_right()
+            sleep(0.025)
         else:
             self._go_forward()
 
@@ -289,7 +315,7 @@ class RobotState:
         LEFT_MOTOR.on(SpeedPercent(LEADING_WHEEL_TURNING_SPEED))
 
     def grab_until_stall(self):
-        GRABBER_MOTOR.on(SpeedPercent(30))
+        GRABBER_MOTOR.on(SpeedPercent(25))
 
         while True:
             if GRABBER_MOTOR.is_stalled:
@@ -298,7 +324,7 @@ class RobotState:
             sleep(0.1)
 
     def release_until_stall(self):
-        GRABBER_MOTOR.on(SpeedPercent(-30))
+        GRABBER_MOTOR.on(SpeedPercent(-25))
 
         while True:
             if GRABBER_MOTOR.is_stalled:
@@ -321,14 +347,7 @@ def perform_transporting():
 
     while True:
         try:
-            sleep(0.005)
-
-            if TOUCH_SENSOR.is_pressed:
-                robot.brake()
-                sound.beep()
-                sleep(0.5)
-                sound.beep()
-                robot.state = 0
+            sleep(0.025)
 
             debug_print("Currently in state: ", robot.state)
             robot.update()
