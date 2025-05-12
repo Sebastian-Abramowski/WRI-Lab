@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from time import sleep
+from time import sleep, time
 from enum import Enum
 from ev3dev2.motor import LargeMotor, OUTPUT_A, OUTPUT_B, OUTPUT_C, SpeedPercent, MediumMotor
 from ev3dev2.sensor import INPUT_1, INPUT_4
@@ -9,9 +9,16 @@ from ev3dev2.sound import Sound
 
 DEBUG = False
 
+# line follower
 NORMAL_FORWARD_SPEED = 7
 LEADING_WHEEL_TURNING_SPEED = 7
 SUPPORTING_WHEEL_TURNING_SPEED = -12
+
+# transporter
+ONE_WHEEL_TURNING_SPEED = 10
+CORRECTION_SWITCH_TIME = 1 # after this time we are turning more gently
+TURN_SPEED_MUTIPLIER_AFTER_DELAY = 0.5
+TURN_AROUND_SPEED = 10
 
 RIGHT_MOTOR = LargeMotor(OUTPUT_A)
 LEFT_MOTOR = LargeMotor(OUTPUT_B)
@@ -91,6 +98,7 @@ class RobotState:
     def __init__(self, sound):
         self.state = 0
         self.sound = sound
+        self.turn_start_time = 0
 
     def update(self):
         left_color = get_color_from(LEFT_COLOR_SENSOR)
@@ -103,12 +111,12 @@ class RobotState:
 
             if (right_color == Color.GREEN):
                 RIGHT_MOTOR.on(SpeedPercent(0))
-                LEFT_MOTOR.on(SpeedPercent(10))
+                LEFT_MOTOR.on(SpeedPercent(ONE_WHEEL_TURNING_SPEED))
 
                 self.state = 1
 
             elif (left_color == Color.GREEN):
-                RIGHT_MOTOR.on(SpeedPercent(10))
+                RIGHT_MOTOR.on(SpeedPercent(ONE_WHEEL_TURNING_SPEED))
                 LEFT_MOTOR.on(SpeedPercent(0))
 
                 self.state = 4
@@ -126,10 +134,17 @@ class RobotState:
 
         elif (self.state == 3):
 
+            if (self.turn_start_time == 0):
+                self.turn_start_time = time()
+
+            elapsed_time = time() - self.turn_start_time
+            if (elapsed_time > CORRECTION_SWITCH_TIME):
+                LEFT_MOTOR.on(SpeedPercent(int(ONE_WHEEL_TURNING_SPEED * TURN_SPEED_MUTIPLIER_AFTER_DELAY)))
+
             if (left_color == Color.BLACK):
-                #RIGHT_MOTOR.on(SpeedPercent(0))
-                RIGHT_MOTOR.on_for_degrees(SpeedPercent(25), 85)
+                RIGHT_MOTOR.on(SpeedPercent(0))
                 LEFT_MOTOR.on(SpeedPercent(0))
+                self.turn_start_time = 0
 
                 self.state = 7
 
@@ -146,10 +161,17 @@ class RobotState:
 
         elif (self.state == 6):
 
+            if (self.turn_start_time == 0):
+                self.turn_start_time = time()
+
+            elapsed_time = time() - self.turn_start_time
+            if (elapsed_time > CORRECTION_SWITCH_TIME):
+                RIGHT_MOTOR.on(SpeedPercent(int(ONE_WHEEL_TURNING_SPEED * TURN_SPEED_MUTIPLIER_AFTER_DELAY)))
+
             if (right_color == Color.BLACK):
                 RIGHT_MOTOR.on(SpeedPercent(0))
-                LEFT_MOTOR.on_for_degrees(SpeedPercent(25), 85)
-                #LEFT_MOTOR.on(SpeedPercent(0))
+                LEFT_MOTOR.on(SpeedPercent(0))
+                self.turn_start_time = 0
 
                 self.state = 7
 
@@ -161,20 +183,36 @@ class RobotState:
                 RIGHT_MOTOR.on(SpeedPercent(0))
                 LEFT_MOTOR.on(SpeedPercent(0))
 
-                sleep(1)
-                self.sound.beep()
-                sleep(1)
+                # sleep(1)
+                # self.sound.beep()
+                # sleep(1)
 
                 self.grab_until_stall()
+                sleep(0.025)
+
+                RIGHT_MOTOR.on(SpeedPercent(-TURN_AROUND_SPEED))
+                LEFT_MOTOR.on(SpeedPercent(TURN_AROUND_SPEED))
 
                 self.state = 8
 
         # after grabbing
         elif (self.state == 8):
-            RIGHT_MOTOR.on(SpeedPercent(-10))
-            LEFT_MOTOR.on(SpeedPercent(10))
 
-            if (right_color == Color.BLACK):
+            if self.turn_start_time == 0:
+                self.turn_start_time = time()
+
+            elapsed_time = time() - self.turn_start_time
+            if elapsed_time > CORRECTION_SWITCH_TIME:
+                reduced_speed = int(TURN_AROUND_SPEED * TURN_SPEED_MUTIPLIER_AFTER_DELAY)
+                RIGHT_MOTOR.on(SpeedPercent(-reduced_speed))
+                LEFT_MOTOR.on(SpeedPercent(reduced_speed))
+
+
+            if (right_color == Color.BLACK or left_color == Color.BLACK):
+                RIGHT_MOTOR.on(SpeedPercent(0))
+                LEFT_MOTOR.on(SpeedPercent(0))
+
+                self.turn_start_time = 0
                 self.state = 9
 
         elif (self.state == 9):
@@ -195,17 +233,24 @@ class RobotState:
         # stopped on black black, turning right
         elif (self.state == 10):
             RIGHT_MOTOR.on(SpeedPercent(0))
-            LEFT_MOTOR.on(SpeedPercent(10))
+            LEFT_MOTOR.on(SpeedPercent(ONE_WHEEL_TURNING_SPEED))
 
             if (left_color == Color.WHITE):
                 self.state = 11
 
         elif (self.state == 11):
 
+            if (self.turn_start_time == 0):
+                self.turn_start_time = time()
+
+            elapsed_time = time() - self.turn_start_time
+            if (elapsed_time > CORRECTION_SWITCH_TIME):
+                LEFT_MOTOR.on(SpeedPercent(int(ONE_WHEEL_TURNING_SPEED * TURN_SPEED_MUTIPLIER_AFTER_DELAY)))
+
             if (left_color == Color.BLACK):
-                RIGHT_MOTOR.on_for_degrees(SpeedPercent(25), 85)
-                # RIGHT_MOTOR.on(SpeedPercent(0))
+                RIGHT_MOTOR.on(SpeedPercent(0))
                 LEFT_MOTOR.on(SpeedPercent(0))
+                self.turn_start_time = 0
 
                 self.state = 12
 
@@ -216,12 +261,12 @@ class RobotState:
 
             if (right_color == Color.RED):
                 RIGHT_MOTOR.on(SpeedPercent(0))
-                LEFT_MOTOR.on(SpeedPercent(10))
+                LEFT_MOTOR.on(SpeedPercent(ONE_WHEEL_TURNING_SPEED))
 
                 self.state = 13
 
             elif (left_color == Color.RED):
-                RIGHT_MOTOR.on(SpeedPercent(15))
+                RIGHT_MOTOR.on(SpeedPercent(ONE_WHEEL_TURNING_SPEED))
                 LEFT_MOTOR.on(SpeedPercent(0))
 
                 self.state = 16
@@ -239,10 +284,17 @@ class RobotState:
 
         elif (self.state == 15):
 
+            if (self.turn_start_time == 0):
+                self.turn_start_time = time()
+
+            elapsed_time = time() - self.turn_start_time
+            if (elapsed_time > CORRECTION_SWITCH_TIME):
+                LEFT_MOTOR.on(SpeedPercent(int(ONE_WHEEL_TURNING_SPEED * TURN_SPEED_MUTIPLIER_AFTER_DELAY)))
+
             if (left_color == Color.BLACK):
                 LEFT_MOTOR.on(SpeedPercent(0))
-                #RIGHT_MOTOR.on(SpeedPercent(0))
-                RIGHT_MOTOR.on_for_degrees(SpeedPercent(25), 85)
+                RIGHT_MOTOR.on(SpeedPercent(0))
+                self.turn_start_time = 0
 
                 self.state = 19
 
@@ -259,10 +311,17 @@ class RobotState:
 
         elif (self.state == 18):
 
+            if (self.turn_start_time == 0):
+                self.turn_start_time = time()
+
+            elapsed_time = time() - self.turn_start_time
+            if (elapsed_time > CORRECTION_SWITCH_TIME):
+                RIGHT_MOTOR.on(SpeedPercent(int(ONE_WHEEL_TURNING_SPEED * TURN_SPEED_MUTIPLIER_AFTER_DELAY)))
+
             if (right_color == Color.BLACK):
-                #LEFT_MOTOR.on(SpeedPercent(0))
-                LEFT_MOTOR.on(SpeedPercent(15), 85)
+                LEFT_MOTOR.on(SpeedPercent(0))
                 RIGHT_MOTOR.on(SpeedPercent(0))
+                self.turn_start_time = 0
 
                 self.state = 19
 
@@ -321,7 +380,7 @@ class RobotState:
             if GRABBER_MOTOR.is_stalled:
                 GRABBER_MOTOR.off(brake=True)
                 break
-            sleep(0.1)
+            sleep(0.02)
 
     def release_until_stall(self):
         GRABBER_MOTOR.on(SpeedPercent(-25))
@@ -330,7 +389,7 @@ class RobotState:
             if GRABBER_MOTOR.is_stalled:
                 GRABBER_MOTOR.off(brake=False)
                 break
-            sleep(0.1)
+            sleep(0.02)
 
     def brake(self):
         RIGHT_MOTOR.off(brake=False)
