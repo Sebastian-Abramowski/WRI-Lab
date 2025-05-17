@@ -16,7 +16,7 @@ SUPPORTING_WHEEL_TURNING_SPEED = -12
 
 # transporter
 ONE_WHEEL_TURNING_SPEED = 10
-CORRECTION_SWITCH_TIME = 1 # after this time we are turning more gently
+CORRECTION_SWITCH_TIME = 1 # after this time we are turning more gently (we have 6 turns)
 TURN_SPEED_MUTIPLIER_AFTER_DELAY = 0.5
 TURN_AROUND_SPEED = 10
 
@@ -36,6 +36,9 @@ class Color(Enum):
     GREEN = "Green"
     UNKNOWN = "Unknown"
 
+PICKUP_COLOR = Color.GREEN
+DROP_COLOR = Color.RED
+
 def debug_print(*args):
     if DEBUG:
         print(*args)
@@ -44,16 +47,25 @@ def get_color_from_V1(sensor):
     red, green, blue = sensor.rgb
     debug_print("RGB values: ", red, green, blue)
 
-    if (red > 135 and green < 55 and blue < 45):
+    if (red > 150 and green < 50 and blue < 50):
         return Color.RED
 
-    if (red < 60 and green < 100 and blue > 100):
-        return Color.BLUE
+    if (red < 60 and green < 95 and blue > 100):
+        # return Color.BLUE # ignore
+        return Color.WHITE
 
-    if (red < 100 and green < 100 and blue < 100):
+    if (red > 140 and green > 140 and blue < 90):
+        # return Color.YELLOW # ignore
+        return Color.WHITE
+
+    if (red < 40 and green > 75 and blue < 60):
+        return Color.GREEN
+
+    if_rgb_close = abs(red - green) < 20 and abs(red - blue) < 20 and abs(green - blue) < 20
+    if (red < 100 and green < 100 and blue < 100) and if_rgb_close:
         return Color.BLACK
 
-    if (red > 100 and green > 100 and blue > 100) or sensor.color_name in ["White", "Yellow"]:
+    if (red > 125 and green > 125 and blue > 125):
         return Color.WHITE
 
     return Color.UNKNOWN
@@ -83,9 +95,11 @@ def get_color_from_V2(sensor):
             best_score = score
             best_color = color
 
+    # ignore
     if best_color in [Color.BLUE, Color.YELLOW]:
         best_color = Color.WHITE
 
+    # correction
     if best_color == Color.GREEN and (green < 83 or red > 30):
        best_color = Color.WHITE
 
@@ -109,13 +123,13 @@ class RobotState:
         if (self.state == 0):
             self._follow_line(left_color, right_color)
 
-            if (right_color == Color.GREEN):
+            if (right_color == PICKUP_COLOR):
                 RIGHT_MOTOR.on(SpeedPercent(0))
                 LEFT_MOTOR.on(SpeedPercent(ONE_WHEEL_TURNING_SPEED))
 
                 self.state = 1
 
-            elif (left_color == Color.GREEN):
+            elif (left_color == PICKUP_COLOR):
                 RIGHT_MOTOR.on(SpeedPercent(ONE_WHEEL_TURNING_SPEED))
                 LEFT_MOTOR.on(SpeedPercent(0))
 
@@ -137,9 +151,11 @@ class RobotState:
             if (self.turn_start_time == 0):
                 self.turn_start_time = time()
 
+            # ---
             elapsed_time = time() - self.turn_start_time
             if (elapsed_time > CORRECTION_SWITCH_TIME):
                 LEFT_MOTOR.on(SpeedPercent(int(ONE_WHEEL_TURNING_SPEED * TURN_SPEED_MUTIPLIER_AFTER_DELAY)))
+            # ---
 
             if (left_color == Color.BLACK):
                 RIGHT_MOTOR.on(SpeedPercent(0))
@@ -164,9 +180,11 @@ class RobotState:
             if (self.turn_start_time == 0):
                 self.turn_start_time = time()
 
+            # ---
             elapsed_time = time() - self.turn_start_time
             if (elapsed_time > CORRECTION_SWITCH_TIME):
                 RIGHT_MOTOR.on(SpeedPercent(int(ONE_WHEEL_TURNING_SPEED * TURN_SPEED_MUTIPLIER_AFTER_DELAY)))
+            # ---
 
             if (right_color == Color.BLACK):
                 RIGHT_MOTOR.on(SpeedPercent(0))
@@ -179,13 +197,13 @@ class RobotState:
         elif (self.state == 7):
             self._follow_line(left_color, right_color)
 
-            if (left_color == Color.GREEN and right_color == Color.GREEN):
+            if (left_color == PICKUP_COLOR and right_color == PICKUP_COLOR):
                 RIGHT_MOTOR.on(SpeedPercent(0))
                 LEFT_MOTOR.on(SpeedPercent(0))
 
-                # sleep(1)
-                # self.sound.beep()
-                # sleep(1)
+                sleep(0.5)
+                self.sound.beep()
+                sleep(0.5)
 
                 self.grab_until_stall()
                 sleep(0.025)
@@ -201,12 +219,13 @@ class RobotState:
             if self.turn_start_time == 0:
                 self.turn_start_time = time()
 
+            # ---
             elapsed_time = time() - self.turn_start_time
             if elapsed_time > CORRECTION_SWITCH_TIME:
                 reduced_speed = int(TURN_AROUND_SPEED * TURN_SPEED_MUTIPLIER_AFTER_DELAY)
                 RIGHT_MOTOR.on(SpeedPercent(-reduced_speed))
                 LEFT_MOTOR.on(SpeedPercent(reduced_speed))
-
+            # ---
 
             if (right_color == Color.BLACK or left_color == Color.BLACK):
                 RIGHT_MOTOR.on(SpeedPercent(0))
@@ -216,10 +235,10 @@ class RobotState:
                 self.state = 9
 
         elif (self.state == 9):
-            if (right_color == Color.GREEN):
+            if (right_color == PICKUP_COLOR):
                 right_color = Color.BLACK
 
-            if (left_color == Color.GREEN):
+            if (left_color == PICKUP_COLOR):
                 left_color = Color.BLACK
 
             self._follow_line(left_color, right_color)
@@ -243,9 +262,11 @@ class RobotState:
             if (self.turn_start_time == 0):
                 self.turn_start_time = time()
 
+            # ---
             elapsed_time = time() - self.turn_start_time
             if (elapsed_time > CORRECTION_SWITCH_TIME):
                 LEFT_MOTOR.on(SpeedPercent(int(ONE_WHEEL_TURNING_SPEED * TURN_SPEED_MUTIPLIER_AFTER_DELAY)))
+            # ---
 
             if (left_color == Color.BLACK):
                 RIGHT_MOTOR.on(SpeedPercent(0))
@@ -259,13 +280,13 @@ class RobotState:
 
             self._follow_line(left_color, right_color)
 
-            if (right_color == Color.RED):
+            if (right_color == DROP_COLOR):
                 RIGHT_MOTOR.on(SpeedPercent(0))
                 LEFT_MOTOR.on(SpeedPercent(ONE_WHEEL_TURNING_SPEED))
 
                 self.state = 13
 
-            elif (left_color == Color.RED):
+            elif (left_color == DROP_COLOR):
                 RIGHT_MOTOR.on(SpeedPercent(ONE_WHEEL_TURNING_SPEED))
                 LEFT_MOTOR.on(SpeedPercent(0))
 
@@ -287,9 +308,11 @@ class RobotState:
             if (self.turn_start_time == 0):
                 self.turn_start_time = time()
 
+            # ---
             elapsed_time = time() - self.turn_start_time
             if (elapsed_time > CORRECTION_SWITCH_TIME):
                 LEFT_MOTOR.on(SpeedPercent(int(ONE_WHEEL_TURNING_SPEED * TURN_SPEED_MUTIPLIER_AFTER_DELAY)))
+            # ---
 
             if (left_color == Color.BLACK):
                 LEFT_MOTOR.on(SpeedPercent(0))
@@ -314,9 +337,11 @@ class RobotState:
             if (self.turn_start_time == 0):
                 self.turn_start_time = time()
 
+            # ---
             elapsed_time = time() - self.turn_start_time
             if (elapsed_time > CORRECTION_SWITCH_TIME):
                 RIGHT_MOTOR.on(SpeedPercent(int(ONE_WHEEL_TURNING_SPEED * TURN_SPEED_MUTIPLIER_AFTER_DELAY)))
+            # ---
 
             if (right_color == Color.BLACK):
                 LEFT_MOTOR.on(SpeedPercent(0))
@@ -329,7 +354,7 @@ class RobotState:
         elif (self.state == 19):
             self._follow_line(left_color, right_color)
 
-            if (left_color == Color.RED or right_color == Color.RED):
+            if (left_color == DROP_COLOR or right_color == DROP_COLOR):
                 RIGHT_MOTOR.on(SpeedPercent(0))
                 LEFT_MOTOR.on(SpeedPercent(0))
 
