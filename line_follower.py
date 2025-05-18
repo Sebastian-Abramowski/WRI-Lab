@@ -42,7 +42,7 @@ def brake():
 	LEFT_MOTOR.off(brake=True)
 
 
-def get_color_from(sensor: ColorSensor):
+def get_color_from(sensor):
 	red, green, blue = sensor.rgb
 
 	if red > 90 and green > 170 and blue > 100:

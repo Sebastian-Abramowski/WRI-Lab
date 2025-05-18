@@ -15,10 +15,10 @@ LEADING_WHEEL_TURNING_SPEED = 7
 SUPPORTING_WHEEL_TURNING_SPEED = -12
 
 # transporter
-ONE_WHEEL_TURNING_SPEED = 10
+ONE_WHEEL_TURNING_SPEED = 5
 CORRECTION_SWITCH_TIME = 1 # after this time we are turning more gently (we have 6 turns)
 TURN_SPEED_MUTIPLIER_AFTER_DELAY = 0.5
-TURN_AROUND_SPEED = 10
+TURN_AROUND_SPEED = 5
 
 RIGHT_MOTOR = LargeMotor(OUTPUT_A)
 LEFT_MOTOR = LargeMotor(OUTPUT_B)
@@ -148,14 +148,8 @@ class RobotState:
 
         elif (self.state == 3):
 
-            if (self.turn_start_time == 0):
-                self.turn_start_time = time()
-
-            # ---
-            elapsed_time = time() - self.turn_start_time
-            if (elapsed_time > CORRECTION_SWITCH_TIME):
-                LEFT_MOTOR.on(SpeedPercent(int(ONE_WHEEL_TURNING_SPEED * TURN_SPEED_MUTIPLIER_AFTER_DELAY)))
-            # ---
+            # if (self.turn_start_time == 0):
+            #     self.turn_start_time = time()
 
             if (left_color == Color.BLACK):
                 RIGHT_MOTOR.on(SpeedPercent(0))
@@ -163,6 +157,12 @@ class RobotState:
                 self.turn_start_time = 0
 
                 self.state = 7
+
+            # ---
+            # elapsed_time = time() - self.turn_start_time
+            # if (elapsed_time > CORRECTION_SWITCH_TIME):
+            #     LEFT_MOTOR.on(SpeedPercent(int(ONE_WHEEL_TURNING_SPEED * TURN_SPEED_MUTIPLIER_AFTER_DELAY)))
+            # ---
 
         # turning left
         elif (self.state == 4):
@@ -177,14 +177,8 @@ class RobotState:
 
         elif (self.state == 6):
 
-            if (self.turn_start_time == 0):
-                self.turn_start_time = time()
-
-            # ---
-            elapsed_time = time() - self.turn_start_time
-            if (elapsed_time > CORRECTION_SWITCH_TIME):
-                RIGHT_MOTOR.on(SpeedPercent(int(ONE_WHEEL_TURNING_SPEED * TURN_SPEED_MUTIPLIER_AFTER_DELAY)))
-            # ---
+            # if (self.turn_start_time == 0):
+            #     self.turn_start_time = time()
 
             if (right_color == Color.BLACK):
                 RIGHT_MOTOR.on(SpeedPercent(0))
@@ -192,6 +186,12 @@ class RobotState:
                 self.turn_start_time = 0
 
                 self.state = 7
+
+            # ---
+            # elapsed_time = time() - self.turn_start_time
+            # if (elapsed_time > CORRECTION_SWITCH_TIME):
+            #     RIGHT_MOTOR.on(SpeedPercent(int(ONE_WHEEL_TURNING_SPEED * TURN_SPEED_MUTIPLIER_AFTER_DELAY)))
+            # ---
 
         # after turning
         elif (self.state == 7):
@@ -216,16 +216,8 @@ class RobotState:
         # after grabbing
         elif (self.state == 8):
 
-            if self.turn_start_time == 0:
-                self.turn_start_time = time()
-
-            # ---
-            elapsed_time = time() - self.turn_start_time
-            if elapsed_time > CORRECTION_SWITCH_TIME:
-                reduced_speed = int(TURN_AROUND_SPEED * TURN_SPEED_MUTIPLIER_AFTER_DELAY)
-                RIGHT_MOTOR.on(SpeedPercent(-reduced_speed))
-                LEFT_MOTOR.on(SpeedPercent(reduced_speed))
-            # ---
+            # if self.turn_start_time == 0:
+            #     self.turn_start_time = time()
 
             if (right_color == Color.BLACK or left_color == Color.BLACK):
                 RIGHT_MOTOR.on(SpeedPercent(0))
@@ -233,6 +225,14 @@ class RobotState:
 
                 self.turn_start_time = 0
                 self.state = 9
+
+            # ---
+            # elapsed_time = time() - self.turn_start_time
+            # if elapsed_time > CORRECTION_SWITCH_TIME:
+            #     reduced_speed = int(TURN_AROUND_SPEED * TURN_SPEED_MUTIPLIER_AFTER_DELAY)
+            #     RIGHT_MOTOR.on(SpeedPercent(-reduced_speed))
+            #     LEFT_MOTOR.on(SpeedPercent(reduced_speed))
+            # ---
 
         elif (self.state == 9):
             if (right_color == PICKUP_COLOR):
@@ -259,14 +259,8 @@ class RobotState:
 
         elif (self.state == 11):
 
-            if (self.turn_start_time == 0):
-                self.turn_start_time = time()
-
-            # ---
-            elapsed_time = time() - self.turn_start_time
-            if (elapsed_time > CORRECTION_SWITCH_TIME):
-                LEFT_MOTOR.on(SpeedPercent(int(ONE_WHEEL_TURNING_SPEED * TURN_SPEED_MUTIPLIER_AFTER_DELAY)))
-            # ---
+            # if (self.turn_start_time == 0):
+            #     self.turn_start_time = time()
 
             if (left_color == Color.BLACK):
                 RIGHT_MOTOR.on(SpeedPercent(0))
@@ -274,6 +268,12 @@ class RobotState:
                 self.turn_start_time = 0
 
                 self.state = 12
+
+            # ---
+            # elapsed_time = time() - self.turn_start_time
+            # if (elapsed_time > CORRECTION_SWITCH_TIME):
+            #     LEFT_MOTOR.on(SpeedPercent(int(ONE_WHEEL_TURNING_SPEED * TURN_SPEED_MUTIPLIER_AFTER_DELAY)))
+            # ---
 
         # go to red
         elif (self.state == 12):
@@ -305,14 +305,8 @@ class RobotState:
 
         elif (self.state == 15):
 
-            if (self.turn_start_time == 0):
-                self.turn_start_time = time()
-
-            # ---
-            elapsed_time = time() - self.turn_start_time
-            if (elapsed_time > CORRECTION_SWITCH_TIME):
-                LEFT_MOTOR.on(SpeedPercent(int(ONE_WHEEL_TURNING_SPEED * TURN_SPEED_MUTIPLIER_AFTER_DELAY)))
-            # ---
+            # if (self.turn_start_time == 0):
+            #     self.turn_start_time = time()
 
             if (left_color == Color.BLACK):
                 LEFT_MOTOR.on(SpeedPercent(0))
@@ -320,6 +314,12 @@ class RobotState:
                 self.turn_start_time = 0
 
                 self.state = 19
+
+            # ---
+            # elapsed_time = time() - self.turn_start_time
+            # if (elapsed_time > CORRECTION_SWITCH_TIME):
+            #     LEFT_MOTOR.on(SpeedPercent(int(ONE_WHEEL_TURNING_SPEED * TURN_SPEED_MUTIPLIER_AFTER_DELAY)))
+            # ---
 
         # turning left
         elif (self.state == 16):
@@ -334,14 +334,8 @@ class RobotState:
 
         elif (self.state == 18):
 
-            if (self.turn_start_time == 0):
-                self.turn_start_time = time()
-
-            # ---
-            elapsed_time = time() - self.turn_start_time
-            if (elapsed_time > CORRECTION_SWITCH_TIME):
-                RIGHT_MOTOR.on(SpeedPercent(int(ONE_WHEEL_TURNING_SPEED * TURN_SPEED_MUTIPLIER_AFTER_DELAY)))
-            # ---
+            # if (self.turn_start_time == 0):
+            #     self.turn_start_time = time()
 
             if (right_color == Color.BLACK):
                 LEFT_MOTOR.on(SpeedPercent(0))
@@ -349,6 +343,12 @@ class RobotState:
                 self.turn_start_time = 0
 
                 self.state = 19
+
+            # ---
+            # elapsed_time = time() - self.turn_start_time
+            # if (elapsed_time > CORRECTION_SWITCH_TIME):
+            #     RIGHT_MOTOR.on(SpeedPercent(int(ONE_WHEEL_TURNING_SPEED * TURN_SPEED_MUTIPLIER_AFTER_DELAY)))
+            # ---
 
         # after turning
         elif (self.state == 19):

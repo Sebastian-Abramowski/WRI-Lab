@@ -14,6 +14,4 @@ scp ./program.py robot@192.168.18.73:~/new_program_name.py
 scp robot@192.168.18.73:~/new_program_name.py ./program.py
 ```
 
-TODO przed następnymi labami:
-
-- napisać sprawko
+Link do pobrania nowej wersji transportera: https://www.transfernow.net/dl/20250518eBev94fC/8ZQSl35a
