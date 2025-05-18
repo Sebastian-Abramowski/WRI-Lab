@@ -18,7 +18,7 @@ TODO: Opis konstrukcji (rodzaj bazy jezdnej, rozmieszczenie silników i czujnik�
 
 ### Algorytm Linefollowera
 
-Zastosowaliśmy prosty, klasyczny algorytm oparty na dwóch czujnikach koloru umieszczonych z przodu robota, po obu stronach linii.
+Zastosowaliśmy `prosty, klasyczny algorytm` oparty na dwóch czujnikach koloru umieszczonych z przodu robota, po obu stronach linii.
 
 Gdy oba czujniki widzą kolor biały, oznacza to, że między nimi znajduje się linia (czyli kolor czarny), dlatego robot kontynuuje jazdę prosto. Jeśli oba czujniki widzą czarny, traktujemy to jako skrzyżowanie — również w tym przypadku robot jedzie prosto.
 
@@ -34,7 +34,7 @@ Schemat blokowy algorytmu:
 
 #### Wykrywanie kolorów przy algorytmie Linefollowera
 
-Ponieważ linefollower wymagał rozpoznawania tylko dwóch kolorów — czarnego i białego — zastosowaliśmy prostą metodę opartą na analizie wartości RGB zwracanych przez czujniki. Jeśli wartości były niejednoznaczne, wspomagaliśmy się nazwą koloru (color_name) zwracaną przez czujnik. Kolory podobne do czarnego (np. "Black", "Brown") traktowaliśmy jako czarny, a kolory jasne (np. "White", "Yellow") jako biały.
+Ponieważ linefollower wymagał rozpoznawania tylko dwóch kolorów — czarnego i białego — zastosowaliśmy prostą `metodę opartą na analizie wartości RGB zwracanych przez czujniki`. Jeśli wartości były niejednoznaczne, wspomagaliśmy się nazwą koloru (color_name) zwracaną przez czujnik. Kolory podobne do czarnego (np. "Black", "Brown") traktowaliśmy jako czarny, a kolory jasne (np. "White", "Yellow") jako biały.
 
 Takie podejście było wystarczająco niezawodne — podczas działania linefollowera nie napotkaliśmy większych problemów z wykrywaniem kolorów.
 
@@ -63,13 +63,15 @@ def get_color_from(sensor):
 
 W przeciwieństwie do prostego linefollowera, algorytm transportera wymagał znacznie bardziej złożonego podejścia. Jego zadaniem było samodzielne przejechanie robota przez trasę, rozpoznanie miejsca odbioru i miejsca docelowego, a także wykonanie odpowiednich manewrów skręcania i chwytania obiektu.
 
-Podstawą działania transportera był automat skończony z 20 stanami, w którym każdy stan odpowiadał konkretnemu etapowi misji — np. jazda po linii, wykrycie punktu odbioru, skręt w lewo/prawo, chwycenie przedmiotu, zawrócenie, dotarcie do punktu docelowego i oddanie obiektu.
+Podstawą działania transportera był `automat skończony z 20 stanami`, w którym każdy stan odpowiadał konkretnemu etapowi misji — np. jazda po linii, wykrycie punktu odbioru, skręt w lewo/prawo, chwycenie przedmiotu, zawrócenie, dotarcie do punktu docelowego i oddanie obiektu.
 
 W ramach niektórych stanów wykorzystaliśmy fragmenty kodu zaimplementowanego wcześniej w linefollowerze — głównie do jazdy po linii między punktami.
 
 Cały proces opierał się na analizie kolorów odczytywanych z dwóch czujników, przechodzeniu między stanami automatu oraz odpowiednim sterowaniu silnikami kół i chwytaka.
 
-Program znajduje się w pliku transporter.py
+Podobnie jak wcześniej, prędkości w transporterze dobieraliśmy eksperymentalnie — zależało nam, żeby robot płynnie skręcał i nie mylił stanów podczas jazdy.
+
+Program znajduje się w pliku `transporter.py`
 
 Automat skończony wykorzystany w algorytmie:
 
@@ -79,7 +81,7 @@ Automat skończony wykorzystany w algorytmie:
 
 Ze względu na konieczność rozróżniania kilku kolorów, a także fakt, że błędne rozpoznanie mogło prowadzić do przejścia w niewłaściwy stan, zastosowaliśmy dokładniejszą metodę wykrywania.
 
-Każdy odczyt RGB porównywany był z zestawem wcześniej zdefiniowanych kolorów bazowych. Wybieraliśmy ten kolor, dla którego suma różnic składowych RGB była najmniejsza. Kolory nieistotne (np. żółty, niebieski) traktowaliśmy jako biały, a dla zielonego wprowadziliśmy dodatkową korektę.
+`Każdy odczyt RGB porównywany był z zestawem wcześniej zdefiniowanych kolorów bazowych`. Wybieraliśmy ten kolor, dla którego suma różnic składowych RGB była najmniejsza. Kolory nieistotne (np. żółty, niebieski) traktowaliśmy jako biały, a dla zielonego wprowadziliśmy dodatkową korektę.
 
 Kod rozpoznawania kolorów:
 
