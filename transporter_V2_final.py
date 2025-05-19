@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from time import sleep, time
+from time import sleep
 from enum import Enum
 from ev3dev2.motor import LargeMotor, OUTPUT_A, OUTPUT_B, OUTPUT_C, SpeedPercent, MediumMotor
 from ev3dev2.sensor import INPUT_1, INPUT_4
@@ -11,7 +11,7 @@ DEBUG = False
 
 # line follower
 NORMAL_FORWARD_SPEED = 6
-LEADING_WHEEL_TURNING_SPEED = 6
+LEADING_WHEEL_TURNING_SPEED = 8
 SUPPORTING_WHEEL_TURNING_SPEED = -12
 
 # transporter
@@ -57,7 +57,7 @@ COLOR_BASES = {
 
 def get_color_from(sensor):
     sensor_color = sensor.rgb
-    debug_print("RGB values: ", sensor_color)
+    # debug_print("RGB values: ", sensor_color)
 
     def diff(color1, color2):
         return ((color1[0] - color2[0])**2 + (color1[1] - color2[1])**2 + (color1[2] - color2[2])**2)
@@ -88,7 +88,7 @@ def update():
     left_color = get_color_from(LEFT_COLOR_SENSOR)
     right_color = get_color_from(RIGHT_COLOR_SENSOR)
 
-    debug_print("Colors before updating state: ", left_color, right_color)
+    # debug_print("Colors before updating state: ", left_color, right_color)
 
     if (state == 0):
         follow_line(left_color, right_color)
@@ -274,8 +274,9 @@ def grab_until_stall():
         sleep(0.02)
 
 def release_until_stall():
-    #GRABBER_MOTOR.on(SpeedPercent(-25))
     GRABBER_MOTOR.on_for_degrees(SpeedPercent(50), -2950)
+
+    #GRABBER_MOTOR.on(SpeedPercent(-25))
     #while True:
     #    if GRABBER_MOTOR.is_stalled:
     #        GRABBER_MOTOR.off(brake=False)
@@ -297,7 +298,7 @@ def perform_transporting():
         while True:
             sleep(0.01)
 
-            debug_print("Currently in state: ", state)
+            # debug_print("Currently in state: ", state)
             update()
     except KeyboardInterrupt:
         brake()

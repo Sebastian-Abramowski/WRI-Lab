@@ -2,7 +2,7 @@
 
 - Przedmiot: Wstęp do robotyki dla informatyków
 
-- Data: 18/05/2025
+- Data: 18.05.2025
 
 - Autorzy:
 
@@ -26,7 +26,7 @@ Jeśli prawy czujnik wykryje czarny kolor, oznacza to, że robot zjeżdża z lin
 
 Prędkości kół zostały dobrane eksperymentalnie tak, aby zapewnić stabilną jazdę oraz możliwość pokonywania zakrętów bez wypadania z trasy.
 
-Program znajduje się w pliku `linefollower.py`
+Implementację umieściliśmy w pliku `linefollower.py`
 
 Schemat blokowy algorytmu:
 
@@ -63,15 +63,15 @@ def get_color_from(sensor):
 
 W przeciwieństwie do prostego linefollowera, algorytm transportera wymagał znacznie bardziej złożonego podejścia. Jego zadaniem było samodzielne przejechanie robota przez trasę, rozpoznanie miejsca odbioru i miejsca docelowego, a także wykonanie odpowiednich manewrów skręcania i chwytania obiektu.
 
-Podstawą działania transportera był `automat skończony z 20 stanami`, w którym każdy stan odpowiadał konkretnemu etapowi misji — np. jazda po linii, wykrycie punktu odbioru, skręt w lewo/prawo, chwycenie przedmiotu, zawrócenie, dotarcie do punktu docelowego i oddanie obiektu.
+Podstawą działania transportera był `automat skończony składający się z 21 stanów`, w którym każdy stan odpowiadał konkretnemu etapowi misji — np. jazda po linii, wykrycie punktu odbioru, skręt w lewo/prawo, chwycenie przedmiotu, zawrócenie, dotarcie do punktu docelowego i oddanie obiektu.
 
-W ramach niektórych stanów wykorzystaliśmy fragmenty kodu zaimplementowanego wcześniej w linefollowerze — głównie do jazdy po linii między punktami.
+W ramach niektórych stanów wykorzystaliśmy fragmenty kodu zaimplementowanego wcześniej w linefollowerze — do jazdy po linii, np. aby dojechać do stacji odkładania klocka.
 
 Cały proces opierał się na analizie kolorów odczytywanych z dwóch czujników, przechodzeniu między stanami automatu oraz odpowiednim sterowaniu silnikami kół i chwytaka.
 
 Podobnie jak wcześniej, prędkości w transporterze dobieraliśmy eksperymentalnie — zależało nam, żeby robot płynnie skręcał i nie mylił stanów podczas jazdy.
 
-Program znajduje się w pliku `transporter.py`
+Kod algorytmu znajduje się w pliku `transporter.py`
 
 Automat skończony wykorzystany w algorytmie:
 
@@ -81,7 +81,11 @@ Automat skończony wykorzystany w algorytmie:
 
 Ze względu na konieczność rozróżniania kilku kolorów, a także fakt, że błędne rozpoznanie mogło prowadzić do przejścia w niewłaściwy stan, zastosowaliśmy dokładniejszą metodę wykrywania.
 
-`Każdy odczyt RGB porównywany był z zestawem wcześniej zdefiniowanych kolorów bazowych`. Wybieraliśmy ten kolor, dla którego suma różnic składowych RGB była najmniejsza. Kolory nieistotne (np. żółty, niebieski) traktowaliśmy jako biały, a dla zielonego wprowadziliśmy dodatkową korektę.
+Na początku próbowaliśmy prostszych metod rozpoznawania kolorów, jednak okazały się one zawodne — robot od czasu do czasu błędnie interpretował kolor, co skutkowało przejściem do niepożądanego stanu automatu.
+
+W odpowiedzi na ten problem `każdy odczyt RGB porównywany był z zestawem wcześniej zdefiniowanych kolorów bazowych`. Wybieraliśmy ten kolor, dla którego suma różnic składowych RGB podniesionych do kwadratu była najmniejsza. Kolory nieistotne (np. żółty, niebieski) traktowaliśmy jako biały, a dla zielonego wprowadziliśmy dodatkową korektę.
+
+Kolory bazowe ustaliliśmy na podstawie kilku pomiarów dla każdego koloru, a następnie "na oko" wybraliśmy reprezentatywną wartość RGB, która najlepiej pasowała do danego koloru.
 
 Kod rozpoznawania kolorów:
 
@@ -95,32 +99,32 @@ COLOR_BASES = {
     Color.YELLOW: (170, 235, 33)
 }
 
-def get_color_from_V2(sensor):
-    red, green, blue = sensor.rgb
-    debug_print("RGB values: ", red, green, blue)
+def get_color_from(sensor):
+    sensor_color = sensor.rgb
+    debug_print("RGB values: ", sensor_color)
 
-    def avg_diff(color1, color2):
-        return (abs(color1[0] - color2[0]) + abs(color1[1] - color2[1]) + abs(color1[2] - color2[2]))
+    def diff(color1, color2):
+        return ((color1[0] - color2[0])**2 + (color1[1] - color2[1])**2 + (color1[2] - color2[2])**2)
 
     best_color = Color.UNKNOWN
     best_score = float('inf')
 
     for color, base in COLOR_BASES.items():
-        score = avg_diff(sensor.rgb, base)
+        score = diff(sensor.rgb, base)
         if score < best_score:
             best_score = score
             best_color = color
 
     # ignore
-    if best_color in [Color.BLUE, Color.YELLOW]:
+    if best_color not in [Color.BLACK, Color.WHITE, PICKUP_COLOR, DROP_COLOR]:
         best_color = Color.WHITE
 
     # correction
+    red, green, blue = sensor_color
     if best_color == Color.GREEN and (green < 83 or red > 30):
-       best_color = Color.WHITE
+        best_color = Color.WHITE
 
     return best_color
-
 ```
 
 ### Napotkane problemy
@@ -133,18 +137,18 @@ def get_color_from_V2(sensor):
 
 #### Problemy z linefollowerem
 
-- na początku w linefollowerze próbowaliśmy skręcać, ustawiając prędkość tylko na jedno koło, a drugie pozostawiając w miejscu; jednak robot nie radził sobie wtedy z ostrymi zakrętami — dopiero zastosowanie przeciwstawnych obrotów kół podczas korekty pozwoliło skutecznie pokonywać trudniejsze łuki i zapobiegało blokowaniu się robota w powtarzających się sekwencjach ruchów
+- na początku w linefollowerze próbowaliśmy skręcać, ustawiając prędkość tylko na jedno koło, a drugie pozostawiając w miejscu; jednak robot nie radził sobie wtedy z ostrymi zakrętami — dopiero zastosowanie przeciwstawnych obrotów kół podczas korekty pozwoliło skutecznie pokonywać trudniejsze łuki (szczególnie zakręty o 90 stopni)
 
 - podczas testowania linefollowera zauważyliśmy, że szerokość rozstawu czujników koloru ma istotny wpływ na działanie robota; dlatego zmodyfikowaliśmy konstrukcję, aby umożliwić łatwą regulację ich rozmieszczenia po obu stronach
 
-- dużym problemem było odpowiednie dobranie prędkości przy rozpoznawaniu linii; stopniowo ją zmniejszaliśmy, aż robot zaczął działać poprawnie — kluczowym momentem testów były skręty pod kątem prostym, na których robot najczęściej sobie nie radził przy zbyt dużej prędkości
+- dużym problemem było odpowiednie dobranie prędkości; zaczęliśmy od wyższych wartości i stopniowo je zmniejszaliśmy, aż robot zaczął działać poprawnie — kluczowym momentem testów były skręty pod kątem prostym, na których robot najczęściej sobie nie radził przy zbyt dużej prędkości; dużo eksperymentowaliśmy też z tym, jakie proporcje ustawiać między prędkością jazdy na wprost a różnicą prędkości kół podczas skręcania, żeby ruch był skuteczny i żeby robot działał stabilnie
 
 #### Problemy z transporterem
 
 - podczas transportu rozpoznawanie kolorów było szczególnie problematyczne, ponieważ należało odróżniać kilka barw, poza kolorem czarnym i białym (zielony, czerwony, żółty, niebieski); jedno błędne rozpoznanie mogło prowadzić do przejścia w niewłaściwy stan — poradziliśmy sobie z tym, wprowadzając kosztowniejszą obliczeniowo metodę porównywania z zestawem kolorów bazowych i wybierania najbliższego z nich, a także dodając osłonki przy czujnikach, by ograniczyć wpływ światła zewnętrznego na odczyt koloru
 
-- ze względu na nietypowy sposób chwytania obiektu (po bokach), mieliśmy problem z odpowiednią siłą ścisku; rozwiązaliśmy go, modyfikując konstrukcję chwytaka — zmieniliśmy ułożenie zębatek, aby zwiększyć przełożenie
+- ze względu na nietypowy sposób chwytania obiektu (po bokach), mieliśmy problem z odpowiednią siłą ścisku; rozwiązaliśmy go, modyfikując konstrukcję chwytaka — zmieniliśmy ułożenie zębatek, aby zwiększyć przełożenie; mieliśmy też drobne problemy konstrukcyjne z samym chwytakiem, do którego regularnie dodawaliśmy różne ulepszenia i ograniczniki, żeby poprawić jego działanie i niezawodność
 
-- przy chwytaniu obiektu od boku, chwytak zbyt szybko unosił się do góry; dodaliśmy obciążenie w postaci kół na chwytakach, by spowolnić ruch
+- chwytak przy podnoszeniu obiektu od boku zbyt szybko unosił się do góry; dodaliśmy obciążenia w postaci kół po obu stronach chwytaka, aby spowolnić ruch
 
-- przy skrętach pod kątem prostym w trakcie transportu robot obracał się, aż czujnik wykrywał linię prostopadłą; przy nieco większych prędkościach zdarzało się, że czujnik nie zdążył wykryć koloru i robot skręcał dalej, mimo że nie powinien — ostatecznie rozwiązaliśmy to, po prostu spowalniając cały skręt; testowaliśmy również podejścia z dynamiczną zmianą prędkości skrętu oraz z korektą w przeciwnym kierunku po wykonaniu obrotu
+- w transporterze w niektórych stanach celowo wykonujemy skręt o 90 stopni, np. aby ustawić robota w odpowiednim kierunku względem stacji odbioru lub odkładania; gdy ustawialiśmy zbyt dużą prędkość podczas skręcania, zdarzało się, że czujnik nie zdążył wykryć czarnej linii i robot obracał się dalej, mimo że powinien już się zatrzymać; nawet jeśli linia została wykryta, robot często był zbyt mocno skręcony, aby zdążyć skorygować swój ruch; ostatecznie rozwiązaliśmy ten problem, delikatnie zmniejszając prędkość skrętu oraz dodając ostrą korektę w przeciwnym kierunku tuż po obrocie, aby naprostować robota i lepiej ustawić go względem toru
