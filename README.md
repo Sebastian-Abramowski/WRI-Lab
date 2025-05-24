@@ -14,7 +14,37 @@
 
 ### Konstrukcja robota
 
-TODO: Opis konstrukcji (rodzaj bazy jezdnej, rozmieszczenie silników i czujników na robocie i względem siebie, wybór rozmiaru kół i gąsienic) + zdjęcia
+| <img src="./img/robot_look1.jpg" alt="look1" width="300"> | <img src="./img/robot_look2.jpg" alt="look2" width="300"> |
+|:--:|:--:|
+
+#### Układ jezdny:
+Dwa 'duże' silniki podłączone *(zaznaczone na niebiesko)* połączone są bezpośrednio z koła, zrobie zostało to aby ograniczyć luzy pomiędzy kołami a silnikami.<br>
+Robot posiada 2 koła napędowe oraz 3ci punkt podparcia z tyłu, taka kontrukcja pozwala na obrót wokół własnej osi.<br>
+
+<img src="./img/robot_bottom_drive.png" alt="bottom drive" width="400">
+
+#### Czujniki
+
+Robot posiada 2 czujniki koloru, znajdujący się z przodu robota, zamontowane są one na szynie co umożliwia łatwe ustawienie ich odległosi względem siebie.<br>
+Ich odległość od środka podyktowana jest dwoma czynnikami:
+1. Im mniejsza odległość od środka tym szybciej robot reaguje na odstępstwo od lini
+2. Z kolei zbyt mała odległość sprawia że robot ma problemy z pokonaniem zakrętu o koncie 90°.
+
+<img src="./img/robot_sensors.jpg" alt="robot sensors" width="400">
+
+#### Podnoszenie:
+
+| <img src="./img/robot_grab2.png" alt="grab2" width="300"> | <img src="./img/robot_grab1.png" alt="grab1" width="300"> |
+|:--:|:--:|
+
+|||
+|:--:|:--:|
+| <img src="./img/robot_bottom_graber.png" alt="bottom graber" width="400"> | 'średni' silnik zamontowany jest między 'dużymi' sinikami, podłączony jest wałem do przekładni ślimakowej z przodu robota |
+| <img src="./img/robot_pickup1.png" alt="pickup 1" width="400"> | Z przodu robot posiada chwytak, składający się z dwóch ramion, połączonych zebatkami. Ramiona posiadają gumowe elementy aby lepiej trzymać podniesione obiekty. |
+| <img src="./img/robot_pickup2.png" alt="pickup 2" width="400"> | W momęcie gdy 'średni' silnik obraca przekładnie ślimakową *(filoetowy prostoką na zdjęciu)*, koło zębate obraca się zgodnie z kierunkiem niebieskich strzałek. Na zdjęciu *(zaznaczone na niebiesko)* jest ramie połączone przegubami *(zaznaczne na zielono)* |
+| <img src="./img/robot_pickup3.png" alt="pickup 3" width="400"> | Ruch ramienia do środka robota sprawia że chytak zamyka się |
+| <img src="./img/robot_pickup4.png" alt="pickup 4" width="400"> | W momęcie gdy chytak zamknie się, ramię przesuwa się dalej w kierunku środka robota, co sprawia że obraca się na osi *(zielony punk na zdjęciu)*, podnosząc trzymany obiekt |
+
 
 ### Algorytm Linefollowera
 
