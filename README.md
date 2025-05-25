@@ -10,8 +10,6 @@
 
   - Aleksander Stanoch
 
-- Repozytorium: https://github.com/Sebastian-Abramowski
-
 ### Konstrukcja robota
 
 | <img src="./img/robot_look1.jpg" alt="look1" width="300"> | <img src="./img/robot_look2.jpg" alt="look2" width="300"> |
